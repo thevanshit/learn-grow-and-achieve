@@ -6,29 +6,29 @@ const router = Router();
 router.use(requireAuth);
 
 // Overall progress + streak + GSoC countdown
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   const uid = req.user.id;
 
-  const booksTotal = db.prepare('SELECT COUNT(*) c FROM books').get().c;
-  const booksDone = db.prepare('SELECT COUNT(*) c FROM user_books WHERE user_id = ? AND status = \'done\'').get(uid).c;
-  const booksReading = db.prepare('SELECT COUNT(*) c FROM user_books WHERE user_id = ? AND status = \'reading\'').get(uid).c;
+  const booksTotal = (await db.prepare('SELECT COUNT(*) c FROM books').get()).c;
+  const booksDone = (await db.prepare('SELECT COUNT(*) c FROM user_books WHERE user_id = ? AND status = \'done\'').get(uid)).c;
+  const booksReading = (await db.prepare('SELECT COUNT(*) c FROM user_books WHERE user_id = ? AND status = \'reading\'').get(uid)).c;
 
-  const weeksTotal = db.prepare('SELECT COUNT(*) c FROM weeks').get().c;
-  const weeksDone = db.prepare('SELECT COUNT(*) c FROM user_weeks WHERE user_id = ? AND completed = 1').get(uid).c;
+  const weeksTotal = (await db.prepare('SELECT COUNT(*) c FROM weeks').get()).c;
+  const weeksDone = (await db.prepare('SELECT COUNT(*) c FROM user_weeks WHERE user_id = ? AND completed = 1').get(uid)).c;
 
-  const milestonesTotal = db.prepare('SELECT COUNT(*) c FROM milestones').get().c;
-  const milestonesDone = db.prepare('SELECT COUNT(*) c FROM user_milestones WHERE user_id = ? AND completed = 1').get(uid).c;
+  const milestonesTotal = (await db.prepare('SELECT COUNT(*) c FROM milestones').get()).c;
+  const milestonesDone = (await db.prepare('SELECT COUNT(*) c FROM user_milestones WHERE user_id = ? AND completed = 1').get(uid)).c;
 
-  const tasksTotal = db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ?').get(uid).c;
-  const tasksDone = db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND completed = 1').get(uid).c;
-  const tasksToday = db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND due_date = ?').get(uid, today()).c;
-  const tasksTodayDone = db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND due_date = ? AND completed = 1').get(uid, today()).c;
+  const tasksTotal = (await db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ?').get(uid)).c;
+  const tasksDone = (await db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND completed = 1').get(uid)).c;
+  const tasksToday = (await db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND due_date = ?').get(uid, today())).c;
+  const tasksTodayDone = (await db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND due_date = ? AND completed = 1').get(uid, today())).c;
 
   // Current week (based on roadmap start: 2026-08-03)
   const currentWeek = getCurrentWeek();
 
   // Streak: consecutive days (daily_log or task completion)
-  const streak = computeStreak(uid);
+  const streak = await computeStreak(uid);
 
   res.json({
     booksTotal, booksDone, booksReading,
@@ -52,8 +52,8 @@ function getCurrentWeek() {
   return Math.min(Math.max(week, 1), 41); // clamp; 41 = beyond plan
 }
 
-function computeStreak(uid) {
-  const rows = db.prepare('SELECT date FROM daily_log WHERE user_id = ? ORDER BY date DESC').all(uid);
+async function computeStreak(uid) {
+  const rows = await db.prepare('SELECT date FROM daily_log WHERE user_id = ? ORDER BY date DESC').all(uid);
   const done = new Set(rows.map(r => r.date));
   let streak = 0;
   const d = new Date();

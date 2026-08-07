@@ -6,32 +6,32 @@ const router = Router();
 router.use(requireAuth);
 
 // ---------- Custom tasks ----------
-router.get('/tasks', (req, res) => {
+router.get('/tasks', async (req, res) => {
   const { date } = req.query;
   let rows;
   if (date) {
-    rows = db.prepare('SELECT * FROM custom_tasks WHERE user_id = ? AND due_date = ? ORDER BY CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, id DESC').all(req.user.id, date);
+    rows = await db.prepare('SELECT * FROM custom_tasks WHERE user_id = ? AND due_date = ? ORDER BY CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, id DESC').all(req.user.id, date);
   } else {
-    rows = db.prepare('SELECT * FROM custom_tasks WHERE user_id = ? ORDER BY due_date ASC, CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, id DESC').all(req.user.id);
+    rows = await db.prepare('SELECT * FROM custom_tasks WHERE user_id = ? ORDER BY due_date ASC, CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, id DESC').all(req.user.id);
   }
   res.json(rows);
 });
 
-router.post('/tasks', (req, res) => {
+router.post('/tasks', async (req, res) => {
   const { title, notes, due_date, priority } = req.body || {};
   if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
-  const info = db.prepare('INSERT INTO custom_tasks (user_id, title, notes, due_date, priority) VALUES (?, ?, ?, ?, ?)')
+  const info = await db.prepare('INSERT INTO custom_tasks (user_id, title, notes, due_date, priority) VALUES (?, ?, ?, ?, ?)')
     .run(req.user.id, title.trim(), notes || null, due_date || null, priority || 'medium');
-  const task = db.prepare('SELECT * FROM custom_tasks WHERE id = ?').get(info.lastInsertRowid);
+  const task = await db.prepare('SELECT * FROM custom_tasks WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(task);
 });
 
-router.patch('/tasks/:id', (req, res) => {
-  const task = db.prepare('SELECT * FROM custom_tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+router.patch('/tasks/:id', async (req, res) => {
+  const task = await db.prepare('SELECT * FROM custom_tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
   const { title, notes, due_date, priority, completed } = req.body || {};
   const now = new Date().toISOString();
-  db.prepare(`
+  await db.prepare(`
     UPDATE custom_tasks SET
       title = COALESCE(?, title),
       notes = COALESCE(?, notes),
@@ -45,45 +45,45 @@ router.patch('/tasks/:id', (req, res) => {
     completed ?? task.completed, completed ?? task.completed, now, task.id, req.user.id
   );
 
-  const updated = db.prepare('SELECT * FROM custom_tasks WHERE id = ?').get(task.id);
-  if (completed === 1 && task.completed === 0) bumpDailyLog(req.user.id);
+  const updated = await db.prepare('SELECT * FROM custom_tasks WHERE id = ?').get(task.id);
+  if (completed === 1 && task.completed === 0) await bumpDailyLog(req.user.id);
   res.json(updated);
 });
 
-router.delete('/tasks/:id', (req, res) => {
-  const info = db.prepare('DELETE FROM custom_tasks WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+router.delete('/tasks/:id', async (req, res) => {
+  const info = await db.prepare('DELETE FROM custom_tasks WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
   if (!info.changes) return res.status(404).json({ error: 'Task not found' });
   res.json({ ok: true });
 });
 
 // ---------- Daily log / streaks ----------
-function bumpDailyLog(userId) {
+async function bumpDailyLog(userId) {
   const today = new Date().toISOString().slice(0, 10);
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO daily_log (user_id, date, tasks_completed) VALUES (?, ?, 1)
     ON CONFLICT(user_id, date) DO UPDATE SET tasks_completed = tasks_completed + 1
   `).run(userId, today);
 }
 
-router.get('/daily', (req, res) => {
-  const rows = db.prepare('SELECT * FROM daily_log WHERE user_id = ? ORDER BY date DESC LIMIT 30').all(req.user.id);
+router.get('/daily', async (req, res) => {
+  const rows = await db.prepare('SELECT * FROM daily_log WHERE user_id = ? ORDER BY date DESC LIMIT 30').all(req.user.id);
   res.json(rows);
 });
 
 // ---------- Notes ----------
-router.get('/notes', (req, res) => {
-  res.json(db.prepare('SELECT * FROM notes WHERE user_id = ? ORDER BY id DESC').all(req.user.id));
+router.get('/notes', async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM notes WHERE user_id = ? ORDER BY id DESC').all(req.user.id));
 });
 
-router.post('/notes', (req, res) => {
+router.post('/notes', async (req, res) => {
   const { title, content } = req.body || {};
   if (!content?.trim()) return res.status(400).json({ error: 'Content is required' });
-  const info = db.prepare('INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)').run(req.user.id, title?.trim() || null, content.trim());
-  res.status(201).json(db.prepare('SELECT * FROM notes WHERE id = ?').get(info.lastInsertRowid));
+  const info = await db.prepare('INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)').run(req.user.id, title?.trim() || null, content.trim());
+  res.status(201).json(await db.prepare('SELECT * FROM notes WHERE id = ?').get(info.lastInsertRowid));
 });
 
-router.delete('/notes/:id', (req, res) => {
-  db.prepare('DELETE FROM notes WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+router.delete('/notes/:id', async (req, res) => {
+  await db.prepare('DELETE FROM notes WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
   res.json({ ok: true });
 });
 

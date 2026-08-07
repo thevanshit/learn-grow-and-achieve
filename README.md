@@ -20,8 +20,44 @@ A full-stack, personalized **GSoC 2027 planner** that turns a 40-week AI/ML road
 |----------|------|
 | Frontend | React 18, Vite 5, React Router 6 |
 | Backend  | Node.js (Express) |
-| Database | SQLite via built-in `node:sqlite` (zero native deps) |
+| Database | SQLite via built-in `node:sqlite` (local) or Turso/libSQL (deployed) |
 | Auth     | JWT + bcrypt |
+
+## Deploying to Vercel
+
+The repo is pre-configured for Vercel (`vercel.json` + `api/index.js` serverless function).
+
+> **Important:** Vercel serverless functions have a read-only filesystem, so the SQLite
+> database must live in a hosted service. This project uses **Turso** (SQLite-compatible,
+> free tier available).
+
+### 1. Create a Turso database
+
+```bash
+# Install Turso CLI (or create via https://turso.tech dashboard)
+curl -sSfL https://get.turso.tech/setup.sh | bash
+turso auth login
+turso db create learn-grow-achieve
+turso db show learn-grow-achieve --url        # → libsql://...
+turso db tokens create learn-grow-achieve     # → auth token
+```
+
+### 2. Seed the remote database
+
+```bash
+TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npm run seed
+```
+
+### 3. Deploy
+
+```bash
+vercel login
+vercel env add TURSO_DATABASE_URL
+vercel env add TURSO_AUTH_TOKEN
+vercel --prod
+```
+
+Or connect the GitHub repo in the Vercel dashboard and add the two env vars there.
 
 ## Getting Started
 

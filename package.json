@@ -1,13 +1,13 @@
 {
   "name": "learn-grow-and-achieve",
   "version": "1.0.0",
-  "description": "GSoC 2027 personal planner - 10 batches, 56 books, 40 weeks, 8 milestones",
-  "main": "index.js",
+  "private": true,
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js",
-    "seed": "node seed/seed.js"
+    "build": "cd client && npm install && npm run build",
+    "start": "node server/index.js",
+    "seed": "node server/seed/seed.js",
+    "dev": "node --watch server/index.js"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

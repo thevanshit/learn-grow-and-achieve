@@ -3,13 +3,16 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new DatabaseSync(path.join(__dirname, 'planner.db'));
 
-db.exec('PRAGMA journal_mode = WAL');
-db.exec('PRAGMA foreign_keys = ON');
+// Remote mode: use hosted SQLite (Turso/libSQL) on Vercel or when TURSO_DATABASE_URL is set.
+// Local mode: Node's built-in node:sqlite with a file on disk.
+const isRemote = !!process.env.TURSO_DATABASE_URL || process.env.VERCEL === '1';
 
-// ---------- Schema ----------
-db.exec(`
+if (isRemote && !process.env.TURSO_DATABASE_URL) {
+  throw new Error('TURSO_DATABASE_URL must be set (and TURSO_AUTH_TOKEN for a token-authed DB)');
+}
+
+const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -55,7 +58,6 @@ db.exec(`
     week INTEGER
   );
 
-  -- Per-user progress
   CREATE TABLE IF NOT EXISTS user_books (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
@@ -109,13 +111,77 @@ db.exec(`
     content TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
-`);
+`;
 
-// ---------- Lightweight migrations ----------
-// Add notes.title if the table predates it
-const notesCols = db.prepare("PRAGMA table_info(notes)").all();
-if (!notesCols.some(c => c.name === 'title')) {
-  db.exec('ALTER TABLE notes ADD COLUMN title TEXT');
+// ---------- Adapter ----------
+let impl;
+
+if (isRemote) {
+  const { createClient } = await import('@libsql/client');
+  const client = createClient({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+  });
+
+  impl = {
+    prepare(sql) {
+      return {
+        get: async (...args) => (await client.execute({ sql, args })).rows[0] ?? null,
+        all: async (...args) => (await client.execute({ sql, args })).rows,
+        run: async (...args) => {
+          const r = await client.execute({ sql, args });
+          return { lastInsertRowid: Number(r.lastInsertRowid), changes: Number(r.rowsAffected) };
+        },
+      };
+    },
+    exec: async (sql) => { await client.executeMultiple(sql); },
+    setupSchema: async () => { await client.executeMultiple(SCHEMA); },
+    // Lightweight migration: notes.title
+    migrate: async () => {
+      const cols = (await client.execute({ sql: 'PRAGMA table_info(notes)' })).rows;
+      if (!cols.some(c => c.name === 'title')) {
+        await client.execute({ sql: 'ALTER TABLE notes ADD COLUMN title TEXT' });
+      }
+    },
+  };
+} else {
+  const raw = new DatabaseSync(path.join(__dirname, 'planner.db'));
+  raw.exec('PRAGMA journal_mode = WAL');
+  raw.exec('PRAGMA foreign_keys = ON');
+  raw.exec(SCHEMA);
+
+  // Migration: add notes.title if the table predates it
+  const notesCols = raw.prepare('PRAGMA table_info(notes)').all();
+  if (!notesCols.some(c => c.name === 'title')) {
+    raw.exec('ALTER TABLE notes ADD COLUMN title TEXT');
+  }
+
+  impl = {
+    prepare(sql) {
+      const stmt = raw.prepare(sql);
+      return {
+        get: (...args) => stmt.get(...args) ?? null,
+        all: (...args) => stmt.all(...args),
+        run: (...args) => {
+          const info = stmt.run(...args);
+          return { lastInsertRowid: Number(info.lastInsertRowid), changes: Number(info.changes) };
+        },
+      };
+    },
+    exec: (sql) => { raw.exec(sql); },
+    setupSchema: () => { raw.exec(SCHEMA); },
+    migrate: () => {},
+  };
 }
+
+// Unified facade: local methods are sync, remote are async —
+// `await` works for both.
+const db = {
+  prepare: (sql) => impl.prepare(sql),
+  exec: (sql) => impl.exec(sql),
+  setupSchema: () => impl.setupSchema(),
+  migrate: () => impl.migrate(),
+  isRemote,
+};
 
 export default db;
