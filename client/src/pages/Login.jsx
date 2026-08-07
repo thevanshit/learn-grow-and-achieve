@@ -31,7 +31,7 @@ export default function Login({ mode, onAuth }) {
       <div className="auth-card">
         <div className="auth-logo">L</div>
         <h1>{isLogin ? 'Welcome back' : 'Create your account'}</h1>
-        <p className="muted">
+        <p className="sub">
           {isLogin ? 'Sign in to continue your GSoC 2027 journey.' : 'Start your 40-week roadmap to GSoC 2027.'}
         </p>
 

@@ -1,5 +1,6 @@
-export function ProgressRing({ value = 0, size = 120, stroke = 10, color = '#6366f1', label }) {
-  const r = (size - stroke) / 2;
+import { IconInbox } from './Icons.jsx';
+
+export function ProgressRing({ value = 0, size = 120, stroke = 10, color = '#6366f1', label }) {  const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.min(Math.max(value, 0), 100);
   const offset = c - (pct / 100) * c;
@@ -48,11 +49,11 @@ export function Badge({ status }) {
   return <span className={`badge ${status}`}>{map[status] || status}</span>;
 }
 
-export function Empty({ emoji = '📭', text }) {
+export function Empty({ text }) {
   return (
     <div className="empty">
-      <div className="big">{emoji}</div>
-      <div>{text}</div>
+      <div className="empty-icon"><IconInbox /></div>
+      <div className="empty-text">{text}</div>
     </div>
   );
 }

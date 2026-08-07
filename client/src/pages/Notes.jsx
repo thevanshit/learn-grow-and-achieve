@@ -57,7 +57,7 @@ export default function Notes() {
       )}
 
       {notes.length === 0 ? (
-        <Empty emoji="📝" text="No notes yet. Capture your first idea." />
+        <Empty text="No notes yet. Capture your first idea." />
       ) : (
         <div className="grid grid-2">
           {notes.map(n => (

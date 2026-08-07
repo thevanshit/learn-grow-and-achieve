@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../api.js';
 import { PageHeader, Badge, Empty } from '../components/ui.jsx';
-import { IconCheck } from '../components/Icons.jsx';
 
 export default function Books() {
   const [books, setBooks] = useState([]);
@@ -59,7 +58,7 @@ export default function Books() {
       />
 
       {filtered.length === 0 ? (
-        <Empty emoji="📚" text="No books match your filters." />
+        <Empty text="No books match your filters." />
       ) : (
         <div className="card" style={{ padding: 12 }}>
           {filtered.map(b => (

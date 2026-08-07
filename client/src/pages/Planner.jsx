@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
 import { PageHeader, ProgressBar, Empty } from '../components/ui.jsx';
-import { IconCheck } from '../components/Icons.jsx';
+import { IconCheck, IconChevron } from '../components/Icons.jsx';
 
 export default function Planner() {
   const [batches, setBatches] = useState([]);
@@ -47,25 +47,24 @@ export default function Planner() {
         const batchWeeks = weeks.filter(w => w.batch_id === b.id);
         const isOpen = !!open[b.id];
         return (
-          <div key={b.id} className="card" style={{ marginBottom: 16 }}>
+          <div key={b.id} className="card">
             <button
-              className="flex-between"
-              style={{ width: '100%', background: 'none', border: 'none', textAlign: 'left', padding: 0 }}
+              className="batch-head-btn"
               onClick={() => setOpen(o => ({ ...o, [b.id]: !o[b.id] }))}
             >
-              <div className="flex" style={{ gap: 12 }}>
+              <div className="flex" style={{ gap: 12, minWidth: 0 }}>
                 <div className="batch-dot" style={{ background: b.color }} />
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div className="batch-title">Batch {b.id} — {b.title}</div>
                   <div className="batch-meta">{b.focus} · {b.calendar} · Weeks {b.weeks}</div>
                 </div>
               </div>
-              <div className="flex" style={{ gap: 14 }}>
-                <div style={{ width: 120 }}>
+              <div className="flex" style={{ gap: 14, flexShrink: 0 }}>
+                <div style={{ width: 130 }}>
                   <ProgressBar value={b.progress} />
                   <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{b.weeksDone}/{b.weeksTotal} weeks · {b.booksDone}/{b.booksTotal} books</div>
                 </div>
-                <span className="muted" style={{ fontSize: 18 }}>{isOpen ? '▾' : '▸'}</span>
+                <span className={`chevron${isOpen ? ' open' : ''}`}><IconChevron size={16} /></span>
               </div>
             </button>
 
@@ -93,7 +92,7 @@ export default function Planner() {
         );
       })}
 
-      {batches.length === 0 && <Empty emoji="🗺️" text="No batches loaded." />}
+      {batches.length === 0 && <Empty text="No batches loaded." />}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
 import { ProgressRing, StatCard, ProgressBar, Empty } from '../components/ui.jsx';
-import { IconFire, IconBook, IconTasks, IconFlag, IconRocket, IconCheck, IconCalendar, IconTarget } from '../components/Icons.jsx';
+import { IconFire, IconBook, IconTasks, IconFlag, IconCalendar, IconTarget, IconCheck } from '../components/Icons.jsx';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -32,15 +32,14 @@ export default function Dashboard() {
   const milestonePct = stats.milestonesTotal ? Math.round((stats.milestonesDone / stats.milestonesTotal) * 100) : 0;
 
   const currentWeek = weeks.find(w => w.week === stats.currentWeek);
-  const nextWeek = weeks.find(w => w.week === stats.currentWeek + 1);
   const todayTasks = tasks.filter(t => !t.completed);
   const doneToday = tasks.filter(t => t.completed).length;
 
   return (
     <div>
       <div className="page-header">
-        <h1>Good {greeting()}, {firstName} 👋</h1>
-        <p>{today} · Week {stats.currentWeek} of 40 · {stats.streak > 0 ? `${stats.streak}-day streak 🔥` : 'Start your streak today!'}</p>
+        <h1>Good {greeting()}, {firstName}</h1>
+        <p>{today} · Week {stats.currentWeek} of 40 · {stats.streak > 0 ? `${stats.streak}-day streak` : 'Start your streak today'}</p>
       </div>
 
       {/* Top stats */}
@@ -64,14 +63,14 @@ export default function Dashboard() {
                 className={`btn ${currentWeek.completed ? 'btn-secondary' : 'btn-primary'} mt-16`}
                 onClick={() => api.toggleWeek(currentWeek.id, !currentWeek.completed).then(() => window.location.reload())}
               >
-                {currentWeek.completed ? '✓ Week completed' : 'Mark week complete'}
+                {currentWeek.completed ? <><IconCheck size={15} /> Week completed</> : 'Mark week complete'}
               </button>
             </div>
-          ) : <Empty emoji="🎉" text="You finished the 40-week plan!" />}
+          ) : <Empty text="You finished the 40-week plan!" />}
 
           <div className="card-title mt-16" style={{ marginBottom: 8 }}>Today's Tasks</div>
           {todayTasks.length === 0 && doneToday === 0 ? (
-            <Empty emoji="☀️" text="No tasks for today. Add some in Tasks." />
+            <Empty text="No tasks for today. Add some in Tasks." />
           ) : (
             <>
               {todayTasks.slice(0, 4).map(t => (
@@ -83,7 +82,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              {doneToday > 0 && <p className="muted mt-8" style={{ fontSize: 13 }}>✓ {doneToday} done today</p>}
+              {doneToday > 0 && <p className="muted mt-8" style={{ fontSize: 13 }}><IconCheck size={13} /> {doneToday} done today</p>}
             </>
           )}
         </div>

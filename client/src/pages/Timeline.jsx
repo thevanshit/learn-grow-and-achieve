@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, Empty } from '../components/ui.jsx';
+import { PageHeader } from '../components/ui.jsx';
 
 const ROADMAP = [
   { key: 'start', label: 'Roadmap starts', date: '2026-08-03', desc: 'Begin the 40-week plan — batches 1–2 (Python + ML foundations).' },
@@ -37,7 +37,6 @@ export default function Timeline() {
           const isNext = !past && (i === 0 || new Date(ROADMAP[i - 1].date) < today);
           return (
             <div key={r.key} className={`timeline-item${past ? ' past' : ''}${isNext ? ' next' : ''}`}>
-              <div className="timeline-dot" />
               <div className="timeline-content card">
                 <div className="flex-between">
                   <div className="badge medium">{r.label}</div>

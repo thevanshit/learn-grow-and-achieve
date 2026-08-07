@@ -29,7 +29,7 @@ export default function Milestones() {
       />
 
       {milestones.length === 0 ? (
-        <Empty emoji="🏁" text="No milestones yet." />
+        <Empty text="No milestones yet." />
       ) : (
         <div className="card" style={{ padding: 12 }}>
           {milestones.map(m => (

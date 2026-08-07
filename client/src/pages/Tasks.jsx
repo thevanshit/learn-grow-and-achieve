@@ -87,7 +87,7 @@ export default function Tasks() {
       )}
 
       {tasks.length === 0 ? (
-        <Empty emoji="🗒️" text="No tasks for this day. Add one to keep your streak alive." />
+        <Empty text="No tasks for this day. Add one to keep your streak alive." />
       ) : (
         <>
           {pending.map(t => (
