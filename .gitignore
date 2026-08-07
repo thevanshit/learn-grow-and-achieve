@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+client/dist/
+
+# Database
+server/planner.db
+server/planner.db-journal
+server/planner.db-wal
+server/planner.db-shm
+
+# Logs
+*.log
+npm-debug.log*
+
+# Env
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

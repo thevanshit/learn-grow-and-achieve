@@ -1,0 +1,18 @@
+{
+  "name": "learn-grow-and-achieve",
+  "version": "1.0.0",
+  "description": "GSoC 2027 personal planner - 10 batches, 56 books, 40 weeks, 8 milestones",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "seed": "node seed/seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
