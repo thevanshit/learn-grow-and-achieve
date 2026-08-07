@@ -38,7 +38,7 @@ export default function App() {
   return (
     <div className="app-shell">
       {user && <Sidebar user={user} onLogout={() => { setUser(null); localStorage.clear(); }} />}
-      <main className="main">
+      <main className={`main${user ? '' : ' main-auth'}`}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/planner" element={<Planner />} />
