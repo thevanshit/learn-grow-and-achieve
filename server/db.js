@@ -138,9 +138,9 @@ if (isRemote) {
     setupSchema: async () => { await client.executeMultiple(SCHEMA); },
     // Lightweight migration: notes.title
     migrate: async () => {
-      const cols = (await client.execute({ sql: 'PRAGMA table_info(notes)' })).rows;
+      const cols = (await client.execute({ sql: 'PRAGMA table_info(notes)', args: [] })).rows;
       if (!cols.some(c => c.name === 'title')) {
-        await client.execute({ sql: 'ALTER TABLE notes ADD COLUMN title TEXT' });
+        await client.execute({ sql: 'ALTER TABLE notes ADD COLUMN title TEXT', args: [] });
       }
     },
   };
