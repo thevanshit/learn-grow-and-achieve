@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, Empty, toast } from '../components/ui.jsx';
-import { IconCheck, IconPlus, IconTrash, IconBook } from '../components/Icons.jsx';
+import { PageHeader, Empty, StatCard, CountUp, toast } from '../components/ui.jsx';
+import { IconCheck, IconPlus, IconTrash, IconBook, IconZap, IconPages, IconCalendar } from '../components/Icons.jsx';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -72,6 +72,14 @@ export default function Tasks() {
           </div>
         }
       />
+
+      {/* Top stats */}
+      <div className="grid grid-4 mb-24">
+        <div className="anim-in-1"><StatCard icon={<IconCheck />} iconBg="#10b981" value={<CountUp value={done} />} label="Done today" sub={`${tasks.length ? Math.round((done / tasks.length) * 100) : 0}% of today's list`} /></div>
+        <div className="anim-in-2"><StatCard icon={<IconZap />} iconBg="#f59e0b" value={<CountUp value={pending.length} />} label="Pending" sub="Still to knock out" /></div>
+        <div className="anim-in-3"><StatCard icon={<IconBook />} iconBg="#6366f1" value={plan?.today ? <CountUp value={plan.today.pagesToday} /> : '—'} label="Pages to read today" sub={plan?.today ? plan.today.book.title : 'No reading assigned'} /></div>
+        <div className="anim-in-4"><StatCard icon={<IconCalendar />} iconBg="#8b5cf6" value={plan ? <CountUp value={plan.daysRemaining} /> : '—'} label="Days to Feb 1" sub="Reading deadline" /></div>
+      </div>
 
       {plan?.today && (
         <div className="card mb-16 reading-banner anim-in-1">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, Empty, ProgressBar, toast } from '../components/ui.jsx';
-import { IconCheck, IconFlag, IconCalendar } from '../components/Icons.jsx';
+import { PageHeader, Empty, ProgressBar, StatCard, CountUp, toast } from '../components/ui.jsx';
+import { IconCheck, IconFlag, IconCalendar, IconTarget, IconTrophy } from '../components/Icons.jsx';
 
 export default function Milestones({ onCelebrate }) {
   const [milestones, setMilestones] = useState([]);
@@ -22,6 +22,7 @@ export default function Milestones({ onCelebrate }) {
 
   const done = milestones.filter(m => m.completed).length;
   const pct = milestones.length ? Math.round((done / milestones.length) * 100) : 0;
+  const nextUp = milestones.find(m => !m.completed);
 
   return (
     <div>
@@ -29,6 +30,14 @@ export default function Milestones({ onCelebrate }) {
         title="Milestones"
         subtitle={`${done}/${milestones.length} done — these are the projects that make your proposal stand out.`}
       />
+
+      {/* Top stats */}
+      <div className="grid grid-4 mb-24">
+        <div className="anim-in-1"><StatCard icon={<IconTrophy />} iconBg="#f59e0b" value={<><CountUp value={done} />/{milestones.length}</>} label="Milestones done" sub="Portfolio proof" /></div>
+        <div className="anim-in-2"><StatCard icon={<IconTarget />} iconBg="#6366f1" value={<CountUp value={pct} suffix="%" />} label="Portfolio complete" sub="Proposal-ready when 100%" /></div>
+        <div className="anim-in-3"><StatCard icon={<IconFlag />} iconBg="#8b5cf6" value={<CountUp value={milestones.length - done} />} label="Remaining" sub="Keep building" /></div>
+        <div className="anim-in-4"><StatCard icon={<IconCalendar />} iconBg="#10b981" value={nextUp ? <CountUp value={nextUp.week} /> : '—'} label="Next target week" sub={nextUp ? nextUp.title : 'All done!'} /></div>
+      </div>
 
       <div className="card mb-16 anim-in-1">
         <div className="flex-between mb-8">

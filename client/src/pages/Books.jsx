@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../api.js';
-import { PageHeader, Badge, Empty, ProgressBar, toast } from '../components/ui.jsx';
-import { IconCheck, IconBook } from '../components/Icons.jsx';
+import { PageHeader, Badge, Empty, ProgressBar, StatCard, CountUp, toast } from '../components/ui.jsx';
+import { IconCheck, IconBook, IconPages, IconFire } from '../components/Icons.jsx';
 
 export default function Books() {
   const [books, setBooks] = useState([]);
@@ -61,6 +61,14 @@ export default function Books() {
           </div>
         }
       />
+
+      {/* Top stats */}
+      <div className="grid grid-4 mb-24">
+        <div className="anim-in-1"><StatCard icon={<IconBook />} iconBg="#6366f1" value={<><CountUp value={doneCount} />/{books.length}</>} label="Books done" sub={`${Math.round((doneCount / Math.max(books.length, 1)) * 100)}% of the shelf`} /></div>
+        <div className="anim-in-2"><StatCard icon={<IconFire />} iconBg="#f97316" value={<CountUp value={readingCount} />} label="Currently reading" sub="Keep the momentum" /></div>
+        <div className="anim-in-3"><StatCard icon={<IconPages />} iconBg="#8b5cf6" value={<><CountUp value={pagesRead} />/{totalPages.toLocaleString()}</>} label="Pages read" sub={`${Math.round((pagesRead / Math.max(totalPages, 1)) * 100)}% of all pages`} /></div>
+        <div className="anim-in-4"><StatCard icon={<IconCheck />} iconBg="#10b981" value={<CountUp value={books.length - doneCount} />} label="To go" sub="Books still on the list" /></div>
+      </div>
 
       {filtered.length === 0 ? (
         <Empty text="No books match your filters." icon={<IconBook />} />

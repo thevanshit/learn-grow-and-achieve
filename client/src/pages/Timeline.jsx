@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, ProgressBar, CountUp } from '../components/ui.jsx';
-import { IconSparkles, IconCalendar, IconTarget, IconZap } from '../components/Icons.jsx';
+import { PageHeader, ProgressBar, CountUp, StatCard } from '../components/ui.jsx';
+import { IconSparkles, IconCalendar, IconTarget, IconZap, IconFlag, IconRocket, IconClock } from '../components/Icons.jsx';
 
 const ROADMAP = [
   { key: 'start', label: 'Roadmap starts', date: '2026-08-08', desc: 'Day one. Batch 1 kicks off with Git and math foundations.' },
@@ -40,7 +40,7 @@ export default function Timeline() {
 
   useEffect(() => {
     api.stats().then(setStats).catch(console.error).finally(() => setLoading(false));
-    const t = setInterval(() => setNow(new Date()), 60000);
+    const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -57,8 +57,13 @@ export default function Timeline() {
   const next = ROADMAP.find(r => new Date(r.date) >= today) || ROADMAP[ROADMAP.length - 1];
   const nextDate = new Date(next.date);
   const msLeft = Math.max(0, nextDate - today);
-  const daysLeft = Math.floor(msLeft / 86400000);
-  const hoursLeft = Math.floor((msLeft % 86400000) / 3600000);
+  const cd = {
+    days: Math.floor(msLeft / 86400000),
+    hours: Math.floor((msLeft % 86400000) / 3600000),
+    mins: Math.floor((msLeft % 3600000) / 60000),
+    secs: Math.floor((msLeft % 60000) / 1000),
+  };
+  const daysLeft = cd.days;
 
   const currentWeek = stats.currentWeek;
   const phaseProgress = (ph) => {
@@ -68,6 +73,8 @@ export default function Timeline() {
     return Math.round((done / span) * 100);
   };
   const focus = WEEK_TO_BATCH.find(({ range }) => currentWeek >= range[0] && currentWeek <= range[1]);
+  const milestonesDone = stats.milestonesDone ?? 0;
+  const milestonesTotal = stats.milestonesTotal ?? 0;
 
   return (
     <div>
@@ -75,6 +82,14 @@ export default function Timeline() {
         title="GSoC 2027 Timeline"
         subtitle="Every date that matters, and exactly where you should be when it arrives."
       />
+
+      {/* Top stats */}
+      <div className="grid grid-4 mb-24">
+        <div className="anim-in-1"><StatCard icon={<IconCalendar />} iconBg="#6366f1" value={<CountUp value={cd.days} />} label="Days to next milestone" sub={next.label} /></div>
+        <div className="anim-in-2"><StatCard icon={<IconClock />} iconBg="#8b5cf6" value={<CountUp value={timelinePct} suffix="%" />} label="Journey complete" sub="Aug 8, 2026 → Aug 23, 2027" /></div>
+        <div className="anim-in-3"><StatCard icon={<IconFlag />} iconBg="#f59e0b" value={<><CountUp value={milestonesDone} />/{milestonesTotal}</>} label="Milestones done" sub="Portfolio proof" /></div>
+        <div className="anim-in-4"><StatCard icon={<IconRocket />} iconBg="#10b981" value={<CountUp value={currentWeek} />} label="Current week" sub="of the 40-week plan" /></div>
+      </div>
 
       {/* Live countdown hero */}
       <div className="card mb-16 anim-in-1" style={{ background: 'linear-gradient(135deg, var(--primary-soft), transparent 70%)', borderLeft: '4px solid var(--primary)' }}>
@@ -84,11 +99,20 @@ export default function Timeline() {
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>{next.label}</div>
             <div className="muted" style={{ fontSize: 13 }}>{nextDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 40, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--primary)' }}>
-              <CountUp value={daysLeft} duration={1200} />
-            </div>
-            <div className="muted" style={{ fontSize: 13 }}>days · {hoursLeft}h left</div>
+          <div className="flex" style={{ gap: 10, textAlign: 'center' }}>
+            {[
+              { v: cd.days, l: 'days' },
+              { v: cd.hours, l: 'hrs' },
+              { v: cd.mins, l: 'min' },
+              { v: cd.secs, l: 'sec' },
+            ].map(u => (
+              <div key={u.l} style={{ minWidth: 56 }}>
+                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--primary)', fontVariantNumeric: 'tabular-nums' }}>
+                  {String(u.v).padStart(2, '0')}
+                </div>
+                <div className="muted" style={{ fontSize: 11 }}>{u.l}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

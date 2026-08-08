@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, Empty, toast } from '../components/ui.jsx';
-import { IconPlus, IconTrash, IconNote } from '../components/Icons.jsx';
+import { PageHeader, Empty, StatCard, CountUp, toast } from '../components/ui.jsx';
+import { IconPlus, IconTrash, IconNote, IconSparkles, IconClock, IconBook } from '../components/Icons.jsx';
 
 export default function Notes() {
   const [notes, setNotes] = useState([]);
@@ -30,6 +30,13 @@ export default function Notes() {
 
   if (loading) return <div className="splash"><div className="spinner" /></div>;
 
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400000);
+  const monthAgo = new Date(now.getTime() - 30 * 86400000);
+  const thisWeek = notes.filter(n => new Date(n.created_at) >= weekAgo).length;
+  const thisMonth = notes.filter(n => new Date(n.created_at) >= monthAgo).length;
+  const words = notes.reduce((s, n) => s + (n.content || '').split(/\s+/).filter(Boolean).length, 0);
+
   return (
     <div>
       <PageHeader
@@ -37,6 +44,14 @@ export default function Notes() {
         subtitle="Ideas, learnings, org research — keep it all here."
         actions={<button className="btn btn-primary" onClick={() => setShowForm(s => !s)}><IconPlus size={16} /> New note</button>}
       />
+
+      {/* Top stats */}
+      <div className="grid grid-4 mb-24">
+        <div className="anim-in-1"><StatCard icon={<IconNote />} iconBg="#6366f1" value={<CountUp value={notes.length} />} label="Total notes" sub="Your knowledge base" /></div>
+        <div className="anim-in-2"><StatCard icon={<IconSparkles />} iconBg="#8b5cf6" value={<CountUp value={thisWeek} />} label="This week" sub={`${thisMonth} in the last 30 days`} /></div>
+        <div className="anim-in-3"><StatCard icon={<IconBook />} iconBg="#10b981" value={<CountUp value={words} />} label="Words captured" sub="Ideas written down" /></div>
+        <div className="anim-in-4"><StatCard icon={<IconClock />} iconBg="#f59e0b" value={notes.length ? <CountUp value={Math.max(1, Math.round(notes.length / Math.max(1, Math.floor((now - new Date(notes[notes.length - 1].created_at)) / 86400000) + 1)))} /> : '—'} label="Notes / day" sub="Writing habit" /></div>
+      </div>
 
       {showForm && (
         <div className="card mb-16 anim-pop">
