@@ -265,7 +265,7 @@ export default function Dashboard({ onCelebrate }) {
             <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>{weekPages} pages this week</span>
           </div>
           <div className="flex" style={{ alignItems: 'flex-end', gap: 8, height: 120, paddingTop: 8 }}>
-            {days.map(d => (
+            {weekDays.map(d => (
               <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
                 <div
                   title={`${d.pages} pages · ${d.tasks} tasks`}
