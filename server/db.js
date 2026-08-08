@@ -102,6 +102,7 @@ const SCHEMA = `
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     date TEXT NOT NULL,
     tasks_completed INTEGER DEFAULT 0,
+    pages_read INTEGER DEFAULT 0,
     UNIQUE (user_id, date)
   );
 
@@ -147,6 +148,10 @@ if (isRemote) {
       if (!bookCols.some(c => c.name === 'pages')) {
         await client.execute({ sql: 'ALTER TABLE books ADD COLUMN pages INTEGER DEFAULT 0', args: [] });
       }
+      const dailyCols = (await client.execute({ sql: 'PRAGMA table_info(daily_log)', args: [] })).rows;
+      if (!dailyCols.some(c => c.name === 'pages_read')) {
+        await client.execute({ sql: 'ALTER TABLE daily_log ADD COLUMN pages_read INTEGER DEFAULT 0', args: [] });
+      }
     },
   };
 } else {
@@ -163,6 +168,10 @@ if (isRemote) {
   const bookCols = raw.prepare('PRAGMA table_info(books)').all();
   if (!bookCols.some(c => c.name === 'pages')) {
     raw.exec('ALTER TABLE books ADD COLUMN pages INTEGER DEFAULT 0');
+  }
+  const dailyCols = raw.prepare('PRAGMA table_info(daily_log)').all();
+  if (!dailyCols.some(c => c.name === 'pages_read')) {
+    raw.exec('ALTER TABLE daily_log ADD COLUMN pages_read INTEGER DEFAULT 0');
   }
 
   impl = {
@@ -189,7 +198,7 @@ const db = {
   prepare: (sql) => impl.prepare(sql),
   exec: (sql) => impl.exec(sql),
   setupSchema: () => impl.setupSchema(),
-  migrate: () => impl.migrate(),
+  migrate: () => Promise.resolve(impl.migrate()),
   isRemote,
 };
 

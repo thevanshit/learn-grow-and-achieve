@@ -43,13 +43,14 @@ router.get('/books', async (req, res) => {
 router.patch('/books/:id', async (req, res) => {
   const { status, progress } = req.body || {};
   const bookId = Number(req.params.id);
-  const book = await db.prepare('SELECT id FROM books WHERE id = ?').get(bookId);
+  const book = await db.prepare('SELECT id, pages FROM books WHERE id = ?').get(bookId);
   if (!book) return res.status(404).json({ error: 'Book not found' });
 
   const existing = await db.prepare('SELECT * FROM user_books WHERE user_id = ? AND book_id = ?').get(req.user.id, bookId);
   const now = new Date().toISOString();
   const newStatus = status || existing?.status || 'todo';
   const newProgress = progress ?? existing?.progress ?? 0;
+  const prevProgress = existing?.progress ?? 0;
 
   let startedAt = existing?.started_at ?? null;
   let finishedAt = existing?.finished_at ?? null;
@@ -64,8 +65,22 @@ router.patch('/books/:id', async (req, res) => {
     await db.prepare('INSERT INTO user_books (user_id, book_id, status, progress, started_at, finished_at) VALUES (?, ?, ?, ?, ?, ?)')
       .run(req.user.id, bookId, newStatus, newProgress, startedAt, finishedAt);
   }
+
+  // Reading counts toward the daily streak: log pages actually read today
+  const pagesDelta = Math.round(((newProgress - prevProgress) / 100) * (book.pages || 0));
+  if (pagesDelta > 0) await bumpReadingLog(req.user.id, pagesDelta);
+
   res.json({ id: bookId, status: newStatus, progress: newProgress });
 });
+
+// ---------- Daily reading log (feeds streaks + activity chart) ----------
+async function bumpReadingLog(userId, pages) {
+  const today = new Date().toISOString().slice(0, 10);
+  await db.prepare(`
+    INSERT INTO daily_log (user_id, date, tasks_completed, pages_read) VALUES (?, ?, 0, ?)
+    ON CONFLICT(user_id, date) DO UPDATE SET pages_read = pages_read + ?
+  `).run(userId, today, pages, pages);
+}
 
 // ---------- Weeks (with user completion) ----------
 router.get('/weeks', async (req, res) => {
@@ -137,6 +152,17 @@ router.get('/plan', async (req, res) => {
   const remainingPages = Math.max(0, totalPages - pagesRead);
   const pagesPerDay = Math.ceil(remainingPages / daysRemaining);
 
+  // Pace analysis: expected vs actual, projected finish date
+  const daysTotal = daysElapsed + daysRemaining;
+  const expectedPages = Math.round(totalPages * (daysElapsed / daysTotal));
+  const paceDiff = pagesRead - expectedPages; // + ahead, - behind
+  let projectedFinishDate = null;
+  if (daysElapsed > 0 && pagesRead > 0) {
+    const actualPace = pagesRead / daysElapsed;
+    const daysToFinish = Math.ceil(remainingPages / actualPace);
+    projectedFinishDate = new Date(now.getTime() + daysToFinish * 86400000).toISOString().slice(0, 10);
+  }
+
   // Today's assignment: current book, pages [read+1 .. read+pagesPerDay] (capped at book pages)
   let today = null;
   if (currentBook) {
@@ -160,6 +186,9 @@ router.get('/plan', async (req, res) => {
     pagesRead,
     remainingPages,
     pagesPerDay,
+    expectedPages,
+    paceDiff,
+    projectedFinishDate,
     booksTotal: rows.length,
     booksDone,
     currentBook: currentBook ? { id: currentBook.id, title: currentBook.title, author: currentBook.author, pages: currentBook.pages, batch_id: currentBook.batch_id } : null,
