@@ -4,8 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Learn-Grow-and-Achieve — your personal GSoC 2027 planner. 10 batches, 56 books, 40 weeks, 8 milestones." />
+    <meta name="description" content="Learn-Grow-and-Achieve — your personal GSoC 2027 planner. 77 books, 40 weeks, 11 milestones, one goal." />
+    <meta name="theme-color" content="#6366f1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <title>Learn-Grow-and-Achieve · GSoC 2027 Planner</title>
+    <script>
+      // Apply theme before first paint to avoid a flash of the wrong mode
+      (function () {
+        try {
+          var t = localStorage.getItem('lga_theme');
+          if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -4,7 +4,7 @@ A full-stack, personalized **GSoC 2027 planner** that turns a 40-week AI/ML road
 
 ## Features
 
-- **10 batches · 56 books · 40 weeks** — a curated O'Reilly reading list (see `Books .md`) mapped to a week-by-week GSoC roadmap (see `GSoC.md`).
+- **11 batches · 66 books · 40 weeks** — a curated O'Reilly reading list (see `Books .md`) mapped to a week-by-week GSoC roadmap (see `GSoC.md`).
 - **Dashboard** — day streak, today's focus, overall progress rings, and a live GSoC 2027 countdown (org list → proposal → results → coding).
 - **Planner** — expandable batch cards with per-week tasks (read + do) and one-click completion.
 - **Books** — track every book as *to do / reading / done*, filter by batch and status, search.
@@ -70,7 +70,7 @@ Or connect the GitHub repo in the Vercel dashboard and add the two env vars ther
 ```bash
 cd server
 npm install
-npm run seed      # creates planner.db with 10 batches, 56 books, 40 weeks, 8 milestones
+npm run seed      # creates planner.db with 11 batches, 66 books, 40 weeks, 8 milestones
 npm run dev       # or: npm start  → http://localhost:4000
 ```
 

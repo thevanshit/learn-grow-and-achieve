@@ -97,6 +97,78 @@ router.patch('/weeks/:id', async (req, res) => {
   res.json({ id: weekId, completed: completed ? 1 : 0 });
 });
 
+// ---------- Daily reading plan (Aug 8 2026 → Feb 1 2027, before GSoC org list) ----------
+const PLAN_START = new Date('2026-08-08T00:00:00');
+const PLAN_DEADLINE = new Date('2027-02-01T00:00:00');
+
+router.get('/plan', async (req, res) => {
+  const rows = await db.prepare(`
+    SELECT bk.*, ub.status, ub.progress AS user_progress
+    FROM books bk
+    LEFT JOIN user_books ub ON ub.book_id = bk.id AND ub.user_id = ?
+    ORDER BY bk.id
+  `).all(req.user.id);
+
+  const now = new Date();
+  const daysRemaining = Math.max(1, Math.ceil((PLAN_DEADLINE - now) / 86400000));
+  const daysElapsed = Math.max(0, Math.floor((now - PLAN_START) / 86400000));
+
+  let totalPages = 0;
+  let pagesRead = 0;
+  let booksDone = 0;
+  let currentBook = null;
+  let currentBookPagesRead = 0;
+  let currentBookProgress = 0;
+
+  for (const b of rows) {
+    const p = b.pages || 0;
+    totalPages += p;
+    const prog = Math.min(Math.max(b.user_progress || 0, 0), 100);
+    const read = Math.round((p * prog) / 100);
+    pagesRead += read;
+    if (b.status === 'done') booksDone++;
+    if (!currentBook && prog < 100) {
+      currentBook = b;
+      currentBookPagesRead = read;
+      currentBookProgress = prog;
+    }
+  }
+
+  const remainingPages = Math.max(0, totalPages - pagesRead);
+  const pagesPerDay = Math.ceil(remainingPages / daysRemaining);
+
+  // Today's assignment: current book, pages [read+1 .. read+pagesPerDay] (capped at book pages)
+  let today = null;
+  if (currentBook) {
+    const from = currentBookPagesRead + 1;
+    const to = Math.min(currentBook.pages, currentBookPagesRead + pagesPerDay);
+    today = {
+      book: { id: currentBook.id, title: currentBook.title, author: currentBook.author, pages: currentBook.pages, batch_id: currentBook.batch_id },
+      fromPage: from,
+      toPage: to,
+      pagesToday: to - from + 1,
+      bookProgress: Math.round(((currentBookPagesRead + (to - from + 1)) / currentBook.pages) * 100)
+    };
+  }
+
+  res.json({
+    startDate: '2026-08-08',
+    deadline: '2027-02-01',
+    daysElapsed,
+    daysRemaining,
+    totalPages,
+    pagesRead,
+    remainingPages,
+    pagesPerDay,
+    booksTotal: rows.length,
+    booksDone,
+    currentBook: currentBook ? { id: currentBook.id, title: currentBook.title, author: currentBook.author, pages: currentBook.pages, batch_id: currentBook.batch_id } : null,
+    currentBookProgress,
+    today,
+    onTrack: pagesRead >= Math.round(totalPages * (daysElapsed / (daysElapsed + daysRemaining)))
+  });
+});
+
 // ---------- Milestones ----------
 router.get('/milestones', async (req, res) => {
   const rows = await db.prepare(`

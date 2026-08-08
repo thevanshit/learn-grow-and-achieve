@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../api.js';
-import { PageHeader, Badge, Empty } from '../components/ui.jsx';
+import { PageHeader, Badge, Empty, ProgressBar, toast } from '../components/ui.jsx';
+import { IconCheck, IconBook } from '../components/Icons.jsx';
 
 export default function Books() {
   const [books, setBooks] = useState([]);
@@ -21,6 +22,8 @@ export default function Books() {
     const progress = status === 'done' ? 100 : book.user_progress || 0;
     await api.updateBook(book.id, { status, progress });
     setBooks(bs => bs.map(x => x.id === book.id ? { ...x, status, user_progress: progress } : x));
+    if (status === 'done') toast(`Finished "${book.title}" — keep going.`);
+    else if (status === 'reading') toast(`Started "${book.title}" — happy reading.`);
   };
 
   const filtered = useMemo(() => books.filter(b => {
@@ -34,12 +37,14 @@ export default function Books() {
 
   const doneCount = books.filter(b => b.status === 'done').length;
   const readingCount = books.filter(b => b.status === 'reading').length;
+  const totalPages = books.reduce((s, b) => s + (b.pages || 0), 0);
+  const pagesRead = books.reduce((s, b) => s + Math.round(((b.pages || 0) * (b.user_progress || 0)) / 100), 0);
 
   return (
     <div>
       <PageHeader
         title="Books"
-        subtitle={`56 books · ${doneCount} done · ${readingCount} reading`}
+        subtitle={`77 books · ${doneCount} done · ${readingCount} reading · ${pagesRead.toLocaleString()}/${totalPages.toLocaleString()} pages`}
         actions={
           <div className="flex" style={{ flexWrap: 'wrap' }}>
             <select className="select" style={{ width: 'auto' }} value={batchFilter} onChange={e => setBatchFilter(e.target.value)}>
@@ -58,16 +63,22 @@ export default function Books() {
       />
 
       {filtered.length === 0 ? (
-        <Empty text="No books match your filters." />
+        <Empty text="No books match your filters." icon={<IconBook />} />
       ) : (
         <div className="card" style={{ padding: 12 }}>
-          {filtered.map(b => (
-            <div key={b.id} className={`book-row${b.status === 'done' ? ' done' : ''}`} style={{ marginBottom: 8 }}>
+          {filtered.map((b, i) => (
+            <div key={b.id} className={`book-row${b.status === 'done' ? ' done' : ''} anim-in-${Math.min((i % 6) + 1, 6)}`} style={{ marginBottom: 8 }}>
               <div className="book-num">{b.id}</div>
               <div className="book-info">
                 <div className="book-title">{b.title}</div>
                 <div className="book-author">{b.author} · {b.publisher} {b.year} · Batch {b.batch_id}</div>
                 <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{b.covers}</div>
+                {b.pages > 0 && (
+                  <div className="flex-between mt-8" style={{ maxWidth: 320 }}>
+                    <span className="muted" style={{ fontSize: 12 }}>{Math.round(((b.pages || 0) * (b.user_progress || 0)) / 100)}/{b.pages} pages</span>
+                    <ProgressBar value={b.user_progress || 0} className={b.status === 'done' ? 'success' : ''} style={{ flex: 1, marginLeft: 12 }} />
+                  </div>
+                )}
               </div>
               <div className="flex" style={{ gap: 6 }}>
                 <Badge status={b.status} />
@@ -75,7 +86,7 @@ export default function Books() {
                   {b.status === 'reading' ? 'Pause' : 'Start'}
                 </button>
                 <button className="btn btn-primary btn-sm" onClick={() => update(b, b.status === 'done' ? 'todo' : 'done')}>
-                  {b.status === 'done' ? 'Undo' : 'Done'}
+                  {b.status === 'done' ? 'Undo' : <><IconCheck size={13} /> Done</>}
                 </button>
               </div>
             </div>

@@ -24,7 +24,7 @@ router.get('/stats', async (req, res) => {
   const tasksToday = (await db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND due_date = ?').get(uid, today())).c;
   const tasksTodayDone = (await db.prepare('SELECT COUNT(*) c FROM custom_tasks WHERE user_id = ? AND due_date = ? AND completed = 1').get(uid, today())).c;
 
-  // Current week (based on roadmap start: 2026-08-03)
+  // Current week (based on roadmap start: 2026-08-08)
   const currentWeek = getCurrentWeek();
 
   // Streak: consecutive days (daily_log or task completion)
@@ -43,9 +43,9 @@ router.get('/stats', async (req, res) => {
 
 function today() { return new Date().toISOString().slice(0, 10); }
 
-// Roadmap starts Mon 2026-08-03 (week 1). 40 weeks => ends ~2027-05-09.
+// Roadmap starts Sat 2026-08-08 (week 1). 40 weeks => ends ~2027-05-16.
 function getCurrentWeek() {
-  const start = new Date('2026-08-03T00:00:00');
+  const start = new Date('2026-08-08T00:00:00');
   const now = new Date();
   const days = Math.floor((now - start) / 86400000);
   const week = Math.floor(days / 7) + 1;

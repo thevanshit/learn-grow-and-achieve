@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, ProgressBar, Empty } from '../components/ui.jsx';
-import { IconCheck, IconChevron } from '../components/Icons.jsx';
+import { PageHeader, ProgressBar, Empty, toast } from '../components/ui.jsx';
+import { IconCheck, IconChevron, IconSparkles } from '../components/Icons.jsx';
 
-export default function Planner() {
+export default function Planner({ onCelebrate }) {
   const [batches, setBatches] = useState([]);
   const [weeks, setWeeks] = useState([]);
   const [open, setOpen] = useState({});
@@ -27,6 +27,7 @@ export default function Planner() {
   const toggleWeek = async (week) => {
     const next = !week.completed;
     await api.toggleWeek(week.id, next);
+    if (next) { onCelebrate(); toast(`Week ${week.week} complete — on track.`); }
     setWeeks(ws => ws.map(w => w.id === week.id ? { ...w, completed: next ? 1 : 0 } : w));
     setBatches(bs => bs.map(b => {
       if (b.id !== week.batch_id) return b;
@@ -40,14 +41,14 @@ export default function Planner() {
     <div>
       <PageHeader
         title="Planner"
-        subtitle="10 batches · 40 weeks · from base to advanced. Complete each week before moving on."
+        subtitle="11 batches · 40 weeks · from first commit to GSoC proposal. One week at a time."
       />
 
-      {batches.map(b => {
+      {batches.map((b, bi) => {
         const batchWeeks = weeks.filter(w => w.batch_id === b.id);
         const isOpen = !!open[b.id];
         return (
-          <div key={b.id} className="card">
+          <div key={b.id} className={`card anim-in-${Math.min(bi + 1, 6)}`}>
             <button
               className="batch-head-btn"
               onClick={() => setOpen(o => ({ ...o, [b.id]: !o[b.id] }))}
@@ -61,7 +62,7 @@ export default function Planner() {
               </div>
               <div className="flex" style={{ gap: 14, flexShrink: 0 }}>
                 <div style={{ width: 130 }}>
-                  <ProgressBar value={b.progress} />
+                  <ProgressBar value={b.progress} striped={b.progress === 100} />
                   <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{b.weeksDone}/{b.weeksTotal} weeks · {b.booksDone}/{b.booksTotal} books</div>
                 </div>
                 <span className={`chevron${isOpen ? ' open' : ''}`}><IconChevron size={16} /></span>
@@ -69,7 +70,7 @@ export default function Planner() {
             </button>
 
             {isOpen && (
-              <div className="mt-16">
+              <div className="mt-16 anim-pop">
                 {batchWeeks.map(w => (
                   <div key={w.id} className={`task-item${w.completed ? ' done' : ''}`}>
                     <button

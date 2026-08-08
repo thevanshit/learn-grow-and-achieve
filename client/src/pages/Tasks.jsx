@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, Empty } from '../components/ui.jsx';
-import { IconCheck, IconPlus, IconTrash } from '../components/Icons.jsx';
+import { PageHeader, Empty, toast } from '../components/ui.jsx';
+import { IconCheck, IconPlus, IconTrash, IconBook } from '../components/Icons.jsx';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -10,15 +10,21 @@ export default function Tasks() {
   const [date, setDate] = useState(todayStr());
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', notes: '', due_date: todayStr(), priority: 'medium' });
+  const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.tasks(date).then(setTasks).catch(console.error).finally(() => setLoading(false));
+    Promise.all([api.tasks(date), api.plan()])
+      .then(([t, p]) => { setTasks(t); setPlan(p); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [date]);
 
   const toggle = async (t) => {
-    await api.updateTask(t.id, { completed: t.completed ? 0 : 1 });
-    setTasks(ts => ts.map(x => x.id === t.id ? { ...x, completed: x.completed ? 0 : 1 } : x));
+    const next = !t.completed;
+    await api.updateTask(t.id, { completed: next ? 1 : 0 });
+    if (next) toast('Task completed.');
+    setTasks(ts => ts.map(x => x.id === t.id ? { ...x, completed: next ? 1 : 0 } : x));
   };
 
   const remove = async (id) => {
@@ -33,6 +39,20 @@ export default function Tasks() {
     setTasks(ts => [...ts, task]);
     setForm({ title: '', notes: '', due_date: todayStr(), priority: 'medium' });
     setShowForm(false);
+    toast('Task added');
+  };
+
+  const addReadingTask = async () => {
+    if (!plan?.today) return;
+    const t = plan.today;
+    const task = await api.createTask({
+      title: `Read pages ${t.fromPage}–${t.toPage} of ${t.book.title}`,
+      notes: `${t.pagesToday} pages · Book #${t.book.id}`,
+      due_date: todayStr(),
+      priority: 'high'
+    });
+    setTasks(ts => [...ts, task]);
+    toast('Reading added to today\'s list');
   };
 
   if (loading) return <div className="splash"><div className="spinner" /></div>;
@@ -53,8 +73,23 @@ export default function Tasks() {
         }
       />
 
+      {plan?.today && (
+        <div className="card mb-16 reading-banner anim-in-1">
+          <div className="flex-between" style={{ gap: 12 }}>
+            <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
+              <IconBook size={18} />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>Today's reading: pages {plan.today.fromPage}–{plan.today.toPage} of {plan.today.book.title}</div>
+                <div className="muted" style={{ fontSize: 12 }}>{plan.today.pagesToday} pages · {plan.pagesPerDay} pages/day pace · {plan.daysRemaining} days to Feb 1, 2027</div>
+              </div>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={addReadingTask}><IconPlus size={14} /> Add as task</button>
+          </div>
+        </div>
+      )}
+
       {showForm && (
-        <div className="card mb-16">
+        <div className="card mb-16 anim-pop">
           <form onSubmit={create}>
             <div className="field">
               <label>Task title</label>
@@ -87,11 +122,11 @@ export default function Tasks() {
       )}
 
       {tasks.length === 0 ? (
-        <Empty text="No tasks for this day. Add one to keep your streak alive." />
+        <Empty text="Nothing on this day. Add a task and keep the streak alive." />
       ) : (
         <>
-          {pending.map(t => (
-            <div key={t.id} className="task-item">
+          {pending.map((t, i) => (
+            <div key={t.id} className={`task-item anim-in-${Math.min((i % 6) + 1, 6)}`}>
               <button className="checkbox" onClick={() => toggle(t)} aria-label="Complete" />
               <div className="task-body">
                 <div className="task-title">{t.title}</div>

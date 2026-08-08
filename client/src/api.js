@@ -41,6 +41,7 @@ export const api = {
   toggleWeek: (id, completed) => request(`/weeks/${id}`, { method: 'PATCH', body: JSON.stringify({ completed }) }),
   milestones: () => request('/milestones'),
   toggleMilestone: (id, completed) => request(`/milestones/${id}`, { method: 'PATCH', body: JSON.stringify({ completed }) }),
+  plan: () => request('/plan'),
 
   // tasks
   tasks: (date) => request(`/tasks${date ? `?date=${date}` : ''}`),

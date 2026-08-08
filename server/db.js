@@ -38,7 +38,8 @@ const SCHEMA = `
     author TEXT,
     publisher TEXT,
     year INTEGER,
-    covers TEXT
+    covers TEXT,
+    pages INTEGER DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS weeks (
@@ -136,11 +137,15 @@ if (isRemote) {
     },
     exec: async (sql) => { await client.executeMultiple(sql); },
     setupSchema: async () => { await client.executeMultiple(SCHEMA); },
-    // Lightweight migration: notes.title
+    // Lightweight migrations: notes.title, books.pages
     migrate: async () => {
-      const cols = (await client.execute({ sql: 'PRAGMA table_info(notes)', args: [] })).rows;
-      if (!cols.some(c => c.name === 'title')) {
+      const notesCols = (await client.execute({ sql: 'PRAGMA table_info(notes)', args: [] })).rows;
+      if (!notesCols.some(c => c.name === 'title')) {
         await client.execute({ sql: 'ALTER TABLE notes ADD COLUMN title TEXT', args: [] });
+      }
+      const bookCols = (await client.execute({ sql: 'PRAGMA table_info(books)', args: [] })).rows;
+      if (!bookCols.some(c => c.name === 'pages')) {
+        await client.execute({ sql: 'ALTER TABLE books ADD COLUMN pages INTEGER DEFAULT 0', args: [] });
       }
     },
   };
@@ -150,10 +155,14 @@ if (isRemote) {
   raw.exec('PRAGMA foreign_keys = ON');
   raw.exec(SCHEMA);
 
-  // Migration: add notes.title if the table predates it
+  // Migrations: add notes.title and books.pages if the tables predate them
   const notesCols = raw.prepare('PRAGMA table_info(notes)').all();
   if (!notesCols.some(c => c.name === 'title')) {
     raw.exec('ALTER TABLE notes ADD COLUMN title TEXT');
+  }
+  const bookCols = raw.prepare('PRAGMA table_info(books)').all();
+  if (!bookCols.some(c => c.name === 'pages')) {
+    raw.exec('ALTER TABLE books ADD COLUMN pages INTEGER DEFAULT 0');
   }
 
   impl = {

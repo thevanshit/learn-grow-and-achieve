@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api.js';
-import { PageHeader, Empty } from '../components/ui.jsx';
-import { IconPlus, IconTrash } from '../components/Icons.jsx';
+import { PageHeader, Empty, toast } from '../components/ui.jsx';
+import { IconPlus, IconTrash, IconNote } from '../components/Icons.jsx';
 
 export default function Notes() {
   const [notes, setNotes] = useState([]);
@@ -20,6 +20,7 @@ export default function Notes() {
     setNotes(ns => [note, ...ns]);
     setForm({ title: '', content: '' });
     setShowForm(false);
+    toast('Note saved');
   };
 
   const remove = async (id) => {
@@ -33,12 +34,12 @@ export default function Notes() {
     <div>
       <PageHeader
         title="Notes"
-        subtitle="Capture ideas, learnings, and GSoC research."
+        subtitle="Ideas, learnings, org research — keep it all here."
         actions={<button className="btn btn-primary" onClick={() => setShowForm(s => !s)}><IconPlus size={16} /> New note</button>}
       />
 
       {showForm && (
-        <div className="card mb-16">
+        <div className="card mb-16 anim-pop">
           <form onSubmit={create}>
             <div className="field">
               <label>Title</label>
@@ -57,13 +58,13 @@ export default function Notes() {
       )}
 
       {notes.length === 0 ? (
-        <Empty text="No notes yet. Capture your first idea." />
+        <Empty text="No notes yet. Capture your first idea." icon={<IconNote />} />
       ) : (
         <div className="grid grid-2">
-          {notes.map(n => (
-            <div key={n.id} className="card">
+          {notes.map((n, i) => (
+            <div key={n.id} className={`card anim-in-${Math.min((i % 6) + 1, 6)}`}>
               <div className="flex-between">
-                <div className="card-title" style={{ marginBottom: 0 }}>{n.title}</div>
+                <div className="card-title" style={{ marginBottom: 0 }}>{n.title || 'Untitled'}</div>
                 <button className="btn btn-ghost btn-sm" onClick={() => remove(n.id)}><IconTrash size={15} /></button>
               </div>
               <p className="muted mt-8" style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{n.content}</p>
